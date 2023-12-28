@@ -15,6 +15,7 @@ WORK_DIR="/app/Miao-Yunzai"
 MIAO_PLUGIN_PATH="/app/Miao-Yunzai/plugins/miao-plugin"
 XIAOYAO_CVS_PATH="/app/Miao-Yunzai/plugins/xiaoyao-cvs-plugin"
 PY_PLUGIN_PATH="/app/Miao-Yunzai/plugins/py-plugin"
+FanSky_Qs_PATH="/app/Miao-Yunzai/plugins/FanSky_Qs"
 
 if [[ ! -d "$HOME/.ovo" ]]; then
     mkdir ~/.ovo
@@ -48,7 +49,7 @@ git log -1 --pretty=format:"%h - %an, %ar (%cd) : %s"
 
 if [ ! -d $MIAO_PLUGIN_PATH"/.git" ]; then
     echo -e "\n ${Warn} ${YellowBG} 由于喵版云崽依赖miao-plugin，检测到目前没有安装，开始自动下载 ${Font} \n"
-    git clone --depth=1 https://gitee.com/yoimiya-kokomi/miao-plugin.git ./plugins/miao-plugin/
+    git clone --depth=1 https://github.com/yoimiya-kokomi/miao-plugin.git ./plugins/miao-plugin/
 fi
 
 
@@ -100,14 +101,47 @@ if [ -d $PY_PLUGIN_PATH"/.git" ]; then
     if [[ ! -f "$HOME/.ovo/py.ok" ]]; then
         set -e
         echo -e "\n ================ \n ${Info} ${GreenBG} 更新 py-plugin 运行依赖 ${Font} \n ================ \n"
-        pnpm install iconv-lite @grpc/grpc-js @grpc/proto-loader -w
-        poetry config virtualenvs.in-project true
-        poetry install
+        cd $WORK_DIR
+	pnpm install --filter=py-plugin
+	
+	cd $PY_PLUGIN_PATH
+	poetry run pip install -r requirements.txt
+	poetry run pip install nonebot2 nonebot-adapter-onebot
         touch ~/.ovo/py.ok
         set +e
     fi
 
     echo -e "\n ================ \n ${Version} ${BlueBG} py-plugin 插件版本信息 ${Font} \n ================ \n"
+
+    git log -1 --pretty=format:"%h - %an, %ar (%cd) : %s"
+
+fi
+
+if [ -d $FanSky_Qs_PATH"/.git" ]; then
+
+    echo -e "\n ================ \n ${Info} ${GreenBG} 拉取 FanSky_Qs 插件更新 ${Font} \n ================ \n"
+
+    cd $FanSky_Qs_PATH
+
+    if [[ -n $(git status -s) ]]; then
+        echo -e " ${Warn} ${YellowBG} 当前工作区有修改，尝试暂存后更新。${Font}"
+        git add .
+        git stash
+        git pull origin main --allow-unrelated-histories --rebase
+        git stash pop
+    else
+        git pull origin main --allow-unrelated-histories
+    fi
+
+    if [[ ! -f "$HOME/.ovo/fansky.ok" ]]; then
+        set -e
+        echo -e "\n ================ \n ${Info} ${GreenBG} 更新 FanSky_Qs 运行依赖 ${Font} \n ================ \n"
+        pnpm install
+        touch ~/.ovo/fansky.ok
+        set +e
+    fi
+
+    echo -e "\n ================ \n ${Version} ${BlueBG} FanSky_Qs 插件版本信息 ${Font} \n ================ \n"
 
     git log -1 --pretty=format:"%h - %an, %ar (%cd) : %s"
 
@@ -132,7 +166,7 @@ if [ -d $XIAOYAO_CVS_PATH"/.git" ]; then
     if [[ ! -f "$HOME/.ovo/xiaoyao.ok" ]]; then
         set -e
         echo -e "\n ================ \n ${Info} ${GreenBG} 更新 xiaoyao-cvs 插件运行依赖 ${Font} \n ================ \n"
-        pnpm add promise-retry superagent -w
+#        pnpm add promise-retry superagent -w
         touch ~/.ovo/xiaoyao.ok
         set +e
     fi
