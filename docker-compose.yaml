@@ -62,3 +62,8 @@ services:
     environment:
       - TXLIB_VERSION=8.9.96
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 350M
