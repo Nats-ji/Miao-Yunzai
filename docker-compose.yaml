@@ -59,7 +59,7 @@ services:
     container_name: miao-qsign
     image: cikeyqi/unidbg-fetch-qsign-docker
     environment:
-      - TXLIB_VERSION=8.9.85
+      - TXLIB_VERSION=8.9.90
     restart: always
     deploy:
       resources:
