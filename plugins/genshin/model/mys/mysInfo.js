@@ -55,7 +55,7 @@ export default class MysInfo {
       return false
     }
 
-    if (!['1', '2', '5', '6', '7', '8', '9'].includes(String(mysInfo.uid)[0])) {
+    if (!['1', '2', '3', '5', '6', '7', '8', '9'].includes(String(mysInfo.uid)[0])) {
       // e.reply('只支持查询国服uid')
       return false
     }
@@ -103,7 +103,7 @@ export default class MysInfo {
     }
 
     let matchUid = (msg = '') => {
-      let ret = /[125-9][0-9]{8}/g.exec(msg)
+      let ret = /[1235-9][0-9]{8}/g.exec(msg)
       if (!ret) return false
       return ret[0]
     }
@@ -118,7 +118,7 @@ export default class MysInfo {
 
     if (e.noTips !== true) e.reply(['请先#绑定uid', segment.button([
       { text: "绑定UID", input: "#绑定uid" },
-    ])], false, { at })
+    ])], false, { at: at || true })
 
     return false
   }
@@ -315,7 +315,7 @@ export default class MysInfo {
     if (!this.uid) {
       this.e.reply(['请先#绑定uid', segment.button([
         { text: "绑定UID", input: "#绑定uid" },
-      ])])
+      ])], false, { at: true })
     }
 
     if (!this.ckInfo.ck) {
