@@ -57,8 +57,7 @@ services:
 
   qsign:
     container_name: miao-qsign
-    build:
-      context: ../QQsign_docs/
+    image: cikeyqi/unidbg-fetch-qsign-docker
     environment:
       - TXLIB_VERSION=8.9.85
     restart: always
