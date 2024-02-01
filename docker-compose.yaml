@@ -36,7 +36,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.10'
+          cpus: '0.40'
           memory: 700M
 
   redis:
@@ -64,5 +64,5 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.10'
+          cpus: '0.40'
           memory: 350M
