@@ -36,7 +36,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.40'
+          cpus: '0.70'
           memory: 700M
 
   redis:
