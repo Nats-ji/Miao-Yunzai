@@ -4,8 +4,7 @@ import lodash from "lodash"
 import fs from "node:fs"
 import common from "../../../lib/common/common.js"
 import gsCfg from "./gsCfg.js"
-import GachaData from "./gachaData.js"
-import { Character, Weapon } from "../../miao-plugin/models/index.js"
+import { Character, Weapon } from "#miao.models"
 
 export default class GachaLog extends base {
   constructor(e) {
@@ -22,6 +21,7 @@ export default class GachaLog extends base {
     const gsPool = [
       { type: 301, typeName: "角色" },
       { type: 302, typeName: "武器" },
+      { type: 500, typeName: "集录" },
       { type: 200, typeName: "常驻" }
     ]
 
@@ -45,7 +45,7 @@ export default class GachaLog extends base {
     } else if (type === "weapon" || type === "武器" || type === "光锥") {
       let weapon = Weapon.get(name, game)
       if (!weapon) {
-        console.log("not-found-weapon",`[${name}]`, game)
+        console.log("not-found-weapon", `[${name}]`, game)
       }
       return weapon?.imgs?.icon || ""
     }
@@ -134,8 +134,7 @@ export default class GachaLog extends base {
     let url = txt.match(/auth_appid=webview_gacha(.*)hk4e_cn/)
 
     /** 删除文件 */
-    fs.unlink(textPath, () => {
-    })
+    fs.unlink(textPath, () => { })
 
     if (!url || !url[0]) {
       return false
@@ -270,7 +269,7 @@ export default class GachaLog extends base {
       return false
     }
 
-    logger.mark(`${this.e.logFnc}[uid:${this.uid}] 开始获取：${this.typeName}记录...`)
+    logger.mark(`${this.e.logFnc}[UID:${this.uid}] 开始获取：${this.typeName}记录...`)
     let all = []
 
     let logJson = this.readJson()
@@ -316,14 +315,14 @@ export default class GachaLog extends base {
     }
 
     if (!res?.data?.list || res.data.list.length <= 0) {
-      logger.mark(`${this.e.logFnc}[uid:${this.uid}] 获取${this.typeName}记录完成，共${Number(page) - 1}页`)
+      logger.mark(`${this.e.logFnc}[UID:${this.uid}] 获取${this.typeName}记录完成，共${Number(page) - 1}页`)
       return { hasErr: false, list: [] }
     }
 
     let list = []
     for (let val of res.data.list) {
       if (ids.get(String(val.id))) {
-        logger.mark(`${this.e.logFnc}[uid:${this.uid}] 获取${this.typeName}记录完成，暂无新记录`)
+        logger.mark(`${this.e.logFnc}[UID:${this.uid}] 获取${this.typeName}记录完成，暂无新记录`)
         return { hasErr: false, list }
       } else {
         list.push(val)
@@ -398,7 +397,7 @@ export default class GachaLog extends base {
 
   async getAllGcLogData() {
     this.model = "gachaAllLog"
-    const poolList = ["角色", this.e?.isSr ? "光锥" : "武器", "常驻"]
+    const poolList = ["角色", this.e?.isSr ? "光锥" : "武器", "集录", "常驻"]
     const logData = []
     let fiveMaxNum = 0
     const originalMsg = this.e.msg
@@ -466,6 +465,10 @@ export default class GachaLog extends base {
       case "武器":
         type = this.e.isSr ? 12 : 302
         typeName = this.e.isSr ? "光锥" : "武器"
+        break
+      case "集录":
+        type = 500
+        typeName = "集录"
         break
       case "光锥":
         type = 12
@@ -634,9 +637,7 @@ export default class GachaLog extends base {
         num: fourLog[i]
       })
     }
-    four = four.sort((a, b) => {
-      return b.num - a.num
-    })
+    four = four.sort((a, b) => { return b.num - a.num })
 
     if (four.length <= 0) {
       four.push({ name: "无", num: 0 })
@@ -645,22 +646,22 @@ export default class GachaLog extends base {
     let fiveAvg = 0
     let fourAvg = 0
     if (fiveNum > 0) {
-      fiveAvg = ((allNum - noFiveNum) / fiveNum).toFixed(2)
+      fiveAvg = Math.round((allNum - noFiveNum) / fiveNum);
     }
     if (fourNum > 0) {
-      fourAvg = ((allNum - noFourNum) / fourNum).toFixed(2)
+      fourAvg = Math.round((allNum - noFourNum) / fourNum);
     }
     // 有效抽卡
     let isvalidNum = 0
 
     if (fiveNum > 0 && fiveNum > wai) {
       if (fiveLog.length > 0 && !fiveLog[0].isUp) {
-        isvalidNum = (allNum - noFiveNum - fiveLog[0].num) / (fiveNum - wai)
+        isvalidNum = Math.round((allNum - noFiveNum - fiveLog[0].num) / (fiveNum - wai));
       } else {
-        isvalidNum = (allNum - noFiveNum) / (fiveNum - wai)
+        isvalidNum = Math.round((allNum - noFiveNum) / (fiveNum - wai));
       }
-      isvalidNum = isvalidNum.toFixed(2)
     }
+
 
     let upYs = isvalidNum * 160
     if (upYs >= 10000) {
@@ -738,17 +739,42 @@ export default class GachaLog extends base {
     const max = type === 12 || type === 302 ? 80 : 90
     let line = []
     let weapon = this.e.isSr ? "光锥" : "武器"
+    //最非，最欧
+    let maxValue, minValue;
+
+    if (data && data.fiveLog) {
+      const filteredFiveLog = data.fiveLog.filter(item => item.num !== 0);
+
+      if (filteredFiveLog.length > 0) {
+        maxValue = Math.max(...filteredFiveLog.map(item => item.num));
+        minValue = Math.min(...filteredFiveLog.map(item => item.num));
+      } else {
+        if (data.fiveLog[0]) {
+          maxValue = data.fiveLog[0];
+          minValue = data.fiveLog[0];
+        } else {
+          maxValue = 0;
+          minValue = 0;
+        }
+      }
+    } else {
+      maxValue = 0;
+      minValue = 0;
+    }
+
     if ([301, 11].includes(type)) {
       line = [[
         { lable: "未出五星", num: data.noFiveNum, unit: "抽" },
         { lable: "五星", num: data.fiveNum, unit: "个" },
         { lable: "五星平均", num: data.fiveAvg, unit: "抽", color: data.fiveColor },
-        { lable: "小保底不歪", num: data.noWaiRate + "%", unit: "" }
+        { lable: "小保底不歪", num: data.noWaiRate + "%", unit: "" },
+        { lable: "最非", num: maxValue, unit: "抽" }
       ], [
         { lable: "未出四星", num: data.noFourNum, unit: "抽" },
         { lable: "五星常驻", num: data.wai, unit: "个" },
         { lable: "UP平均", num: data.isvalidNum, unit: "抽" },
-        { lable: `UP花费${this?.e?.isSr ? "星琼" : "原石"}`, num: data.upYs, unit: "" }
+        { lable: `UP花费${this?.e?.isSr ? "星琼" : "原石"}`, num: data.upYs, unit: "" },
+        { lable: "最欧", num: minValue, unit: "抽" }
       ]]
     }
     // 常驻池
@@ -757,12 +783,14 @@ export default class GachaLog extends base {
         { lable: "未出五星", num: data.noFiveNum, unit: "抽" },
         { lable: "五星", num: data.fiveNum, unit: "个" },
         { lable: "五星平均", num: data.fiveAvg, unit: "抽", color: data.fiveColor },
-        { lable: `五星${weapon}`, num: data.weaponNum, unit: "个" }
+        { lable: `五星${weapon}`, num: data.weaponNum, unit: "个" },
+        { lable: "最非", num: maxValue, unit: "抽" }
       ], [
         { lable: "未出四星", num: data.noFourNum, unit: "抽" },
         { lable: "四星", num: data.fourNum, unit: "个" },
         { lable: "四星平均", num: data.fourAvg, unit: "抽" },
-        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name }
+        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name.slice(0, 4) },
+        { lable: "最欧", num: minValue, unit: "抽" }
       ]]
     }
     // 武器池
@@ -771,12 +799,30 @@ export default class GachaLog extends base {
         { lable: "未出五星", num: data.noFiveNum, unit: "抽" },
         { lable: "五星", num: data.fiveNum, unit: "个" },
         { lable: "五星平均", num: data.fiveAvg, unit: "抽", color: data.fiveColor },
-        { lable: `四星${weapon}`, num: data.weaponFourNum, unit: "个" }
+        { lable: `四星${weapon}`, num: data.weaponFourNum, unit: "个" },
+        { lable: "最非", num: maxValue, unit: "抽" }
       ], [
         { lable: "未出四星", num: data.noFourNum, unit: "抽" },
         { lable: "四星", num: data.fourNum, unit: "个" },
         { lable: "四星平均", num: data.fourAvg, unit: "抽" },
-        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name }
+        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name.slice(0, 4) },
+        { lable: "最欧", num: minValue, unit: "抽" }
+      ]]
+    }
+// 集录池
+    if ([500].includes(type)) {
+      line = [[
+        { lable: "未出五星", num: data.noFiveNum, unit: "抽" },
+        { lable: "五星", num: data.fiveNum, unit: "个" },
+        { lable: "五星平均", num: data.fiveAvg, unit: "抽", color: data.fiveColor },
+        { lable: `四星${weapon}`, num: data.weaponFourNum, unit: "个" },
+        { lable: "最非", num: maxValue, unit: "抽" }
+      ], [
+        { lable: "未出四星", num: data.noFourNum, unit: "抽" },
+        { lable: "四星", num: data.fourNum, unit: "个" },
+        { lable: "四星平均", num: data.fourAvg, unit: "抽" },
+        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name.slice(0, 4) },
+        { lable: "最欧", num: minValue, unit: "抽" }
       ]]
     }
     // 新手池
@@ -785,12 +831,14 @@ export default class GachaLog extends base {
         { lable: "未出五星", num: data.noFiveNum, unit: "抽" },
         { lable: "五星", num: data.fiveNum, unit: "个" },
         { lable: "五星平均", num: data.fiveAvg, unit: "抽", color: data.fiveColor },
-        { lable: `五星${weapon}`, num: data.weaponNum, unit: "个" }
+        { lable: `五星${weapon}`, num: data.weaponNum, unit: "个" },
+        { lable: "最非", num: maxValue, unit: "抽" }
       ], [
         { lable: "未出四星", num: data.noFourNum, unit: "抽" },
         { lable: "四星", num: data.fourNum, unit: "个" },
         { lable: "四星平均", num: data.fourAvg, unit: "抽" },
-        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name }
+        { lable: "四星最多", num: data.maxFour.num, unit: data.maxFour.name.slice(0, 4) },
+        { lable: "最欧", num: minValue, unit: "抽" }
       ]]
     }
     let hasMore = false

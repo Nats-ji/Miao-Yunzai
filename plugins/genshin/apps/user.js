@@ -20,7 +20,7 @@ export class user extends plugin {
           fnc: 'ckCode'
         },
         {
-          reg: '^#绑定[Cc](oo)?[Kk](ie)?$',
+          reg: /^#绑定c(oo)?k(ie)?$/i,
           fnc: 'bingCk'
         },
         {
@@ -29,28 +29,28 @@ export class user extends plugin {
           fnc: 'noLogin'
         },
         {
-          reg: '^#?(原神|星铁)?我的[Cc](oo)?[Kk](ie)?$',
+          reg: /^#?(原神|星铁)?我的c(oo)?k(ie)?$/i,
           event: 'message',
           fnc: 'myCk'
         },
         {
-          reg: '^#?(原神|星铁)?删除[Cc](oo)?[Kk](ie)?$',
+          reg: /^#?(原神|星铁)?删除c(oo)?k(ie)?$/i,
           fnc: 'delCk'
         },
         {
-          reg: '^#?(原神|星铁)?(删除|解绑)(uid|UID)\\s*[0-9]{1,2}$',
+          reg: /^#?(原神|星铁)?(删除|解绑)uid(\s|\+)*([0-9]{1,2})?$/i,
           fnc: 'delUid'
         },
         {
-          reg: '^#(原神|星铁)?绑定(uid|UID)?\\s*([1-9]|18)[0-9]{8}$',
+          reg: /^#(原神|星铁)?绑定(uid)?(\s|\+)*([1-9]|18)[0-9]{8}$/i,
           fnc: 'bingUid'
         },
         {
-          reg: '^#(原神|星铁)?(我的)?(uid|UID)[0-9]{0,2}$',
+          reg: /^#(原神|星铁)?(我的)?(uid)[0-9]{0,2}$/i,
           fnc: 'showUid'
         },
         {
-          reg: '^#\\s*(检查|我的)*[Cc](oo)?[Kk](ie)?(状态)*$',
+          reg: /^#\\s*(检查|我的)*c(oo)?k(ie)?(状态)*$/i,
           fnc: 'checkCkStatus'
         },
         {
@@ -85,9 +85,15 @@ export class user extends plugin {
       return true
     }
 
-    if (this.e.msg == '#绑定uid') {
-      this.setContext('saveUid')
-      this.reply('请发送绑定的uid', false, { at: true })
+    if (/^#?(原神)?绑定uid$/i.test(this.e.msg)) {
+      this.setContext("saveUid")
+      this.reply("请发送绑定的原神uid", false, { at: true })
+      return true
+    }
+
+    if (/^#?星铁绑定uid$/i.test(this.e.msg)) {
+      this.setContext("saveSrUid")
+      this.reply("请发送绑定的星铁uid", false, { at: true })
       return true
     }
   }
@@ -97,12 +103,27 @@ export class user extends plugin {
     if (!this.e.msg) return
     let uid = this.e.msg.match(/([1-9]|18)[0-9]{8}/g)
     if (!uid) {
-      this.reply('uid输入错误', false, { at: true })
+      this.reply("原神UID输入错误", false, { at: true })
       return
     }
-    this.e.msg = '#绑定' + this.e.msg
+    this.e.msg = "#绑定" + this.e.msg
     this.bingUid()
-    this.finish('saveUid')
+    this.finish("saveUid")
+  }
+
+  /** 绑定星铁uid */
+  saveSrUid() {
+    if (!this.e.msg) return
+    let uid = this.e.msg.match(/([1-9]|18)[0-9]{8}/g)
+    if (!uid) {
+      this.reply("星铁UID输入错误", false, { at: true })
+      return
+    }
+    this.e.msg = "#星铁绑定" + this.e.msg
+    this.e.isSr = true
+    this.e.game = 'sr'
+    this.bingUid()
+    this.finish("saveSrUid")
   }
 
   /** 未登录ck */
@@ -156,6 +177,10 @@ export class user extends plugin {
 
   async delUid() {
     let index = this.e.msg.match(/[0-9]{1,2}$/g)
+    if(!index) {
+        this.e.reply(`删除uid请带上序号\n例如：#删除uid1\n发送【#uid】可查看绑定的uid以及对应的序号`)
+        return true;
+    }
     let uidIdx = index && index[0]
     let game = this.e
     if (uidIdx) {
