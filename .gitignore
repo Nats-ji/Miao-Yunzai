@@ -141,6 +141,7 @@ resources/
 # Docker file
 redis
 yunzai
+lagrange
 /.idea/
 /data/
 /temp/

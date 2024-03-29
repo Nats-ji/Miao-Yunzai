@@ -16,6 +16,7 @@ MIAO_PLUGIN_PATH="/app/Miao-Yunzai/plugins/miao-plugin"
 XIAOYAO_CVS_PATH="/app/Miao-Yunzai/plugins/xiaoyao-cvs-plugin"
 PY_PLUGIN_PATH="/app/Miao-Yunzai/plugins/py-plugin"
 FanSky_Qs_PATH="/app/Miao-Yunzai/plugins/FanSky_Qs"
+WS_PLUGIN_PATH="/app/Miao-Yunzai/plugins/ws-plugin"
 
 if [[ ! -d "$HOME/.ovo" ]]; then
     mkdir ~/.ovo
@@ -142,6 +143,36 @@ if [ -d $FanSky_Qs_PATH"/.git" ]; then
     fi
 
     echo -e "\n ================ \n ${Version} ${BlueBG} FanSky_Qs 插件版本信息 ${Font} \n ================ \n"
+
+    git log -1 --pretty=format:"%h - %an, %ar (%cd) : %s"
+
+fi
+
+if [ -d $WS_PLUGIN_PATH"/.git" ]; then
+
+    echo -e "\n ================ \n ${Info} ${GreenBG} 拉取 ws-plugin 插件更新 ${Font} \n ================ \n"
+
+    cd $WS_PLUGIN_PATH
+
+    if [[ -n $(git status -s) ]]; then
+        echo -e " ${Warn} ${YellowBG} 当前工作区有修改，尝试暂存后更新。${Font}"
+        git add .
+        git stash
+        git pull origin main --allow-unrelated-histories --rebase
+        git stash pop
+    else
+        git pull origin main --allow-unrelated-histories
+    fi
+
+    if [[ ! -f "$HOME/.ovo/ws.ok" ]]; then
+        set -e
+        echo -e "\n ================ \n ${Info} ${GreenBG} 更新 ws-plugin 运行依赖 ${Font} \n ================ \n"
+        pnpm install --filter=ws-plugin
+        touch ~/.ovo/ws.ok
+        set +e
+    fi
+
+    echo -e "\n ================ \n ${Version} ${BlueBG} ws-plugin 插件版本信息 ${Font} \n ================ \n"
 
     git log -1 --pretty=format:"%h - %an, %ar (%cd) : %s"
 
